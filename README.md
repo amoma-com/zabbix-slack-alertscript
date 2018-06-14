@@ -22,7 +22,7 @@ Installation
 
 ### The script itself
 
-This [`slack.sh` script](https://github.com/ericoc/zabbix-slack-alertscript/raw/master/slack.sh) needs to be placed in the `AlertScriptsPath` directory that is specified within the Zabbix servers' configuration file (`zabbix_server.conf`) and must be executable by the user running the zabbix_server binary (usually "zabbix") on the Zabbix server:
+This [`slack.sh` script](https://github.com/amomacom/zabbix-slack-alertscript/raw/master/slack.sh) needs to be placed in the `AlertScriptsPath` directory that is specified within the Zabbix servers' configuration file (`zabbix_server.conf`) and must be executable by the user running the zabbix_server binary (usually "zabbix") on the Zabbix server:
 
 	[root@zabbix ~]# grep AlertScriptsPath /etc/zabbix/zabbix_server.conf
 	### Option: AlertScriptsPath
@@ -51,6 +51,10 @@ Make sure that you specify your correct Slack.com incoming web-hook URL and feel
 	# Slack incoming web-hook URL and user name
 	url='https://hooks.slack.com/services/QW3R7Y/D34DC0D3/BCADFGabcDEF123'
 	username='Zabbix'
+
+Also, if you are behind an outbound proxy and you need to use it to contact hooks.slack.com, ensure you hard code your proxy server in the top of the script:
+
+    export https_proxy=https://your.proxy.here
 
 
 ### Within the Zabbix web interface
@@ -83,13 +87,22 @@ Then, create a "Slack" user on the "Users" sub-tab of the "Administration" tab w
 
 Finally, an action can then be created on the "Actions" sub-tab of the "Configuration" tab within the Zabbix servers web interface to notify the Zabbix "Slack" user ensuring that the "Subject" is "PROBLEM" for "Default message" and "RECOVERY" should you choose to send a "Recovery message".
 
-Keeping the messages short is probably a good idea; use something such as the following for the contents of each message:
+Finally, an action can then be created on the "Actions" sub-tab of the "Configuration" tab within the Zabbix servers web interface.
 
-	{TRIGGER.NAME} - {HOSTNAME} ({IPADDRESS})
+The Default subject will appear as the first line, and the Default message as the rest of the message.
+A good subject to put is:
+    {TRIGGER.STATUS} {TRIGGER.SEVERITY} @ {HOSTNAME} - {TRIGGER.NAME}
+The trigger status is used to work out the colouring used next to the event - PROBLEM = red, OK = green.
 
-Additionally, you can have multiple different Zabbix users each with "Slack" media types that notify unique Slack users or channels upon different triggered Zabbix actions.
+The Default message is displayed below the subject.  Here, you can have a link back to your zabbix instance to see more details about the event:
 
-If you are interesting in longer notification messages (with line breaks for example), you may want to reference [this pull request](https://github.com/ericoc/zabbix-slack-alertscript/pull/16) or [any number of forks of this repository](https://github.com/ericoc/zabbix-slack-alertscript/network).
+    <https://zabbix-server/path-to-zabbix/tr_events.php?triggerid={TRIGGER.ID}&eventid={EVENT.ID}|View Trigger>
+
+If you want to use multi line messages, it is best not to use a newline in the message, but instead the characters "\n".
+
+Finally, if you want to send it to a different channel or user than the default, just prepend it to the Default subject.   So, to send to the #my-channel channel, the subject above would become:
+
+    #my-channel {TRIGGER.STATUS} {TRIGGER.SEVERITY} @ {HOSTNAME} - {TRIGGER.NAME}
 
 Testing
 -------
